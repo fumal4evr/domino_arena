@@ -64,14 +64,18 @@ export default function Board({
         style={{ scrollBehavior: 'smooth' }}
       >
         <div className="board-chain">
-          {board.chain.map((played, idx) => {
+          {board.chain.map((played) => {
             const isLastPlayed = lastMove && played.tile.id === lastMove.tileId;
             const animClass = isLastPlayed
               ? DIRECTION_CLASS[lastMove.playerPosition]
               : '';
+            // Only the newly placed tile gets a timestamp key to force re-mount & animation
+            const key = isLastPlayed
+              ? `${played.tile.id}-${lastMove.timestamp}`
+              : played.tile.id;
             return (
               <div
-                key={`${played.tile.id}-${lastMove?.timestamp ?? 0}`}
+                key={key}
                 className={`flex-shrink-0 ${animClass}`}
               >
                 <Tile
