@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
-import { Tile as TileType, PlayerPosition } from '@/engine/types';
+import { Tile as TileType } from '@/engine/types';
 import Tile from './Tile';
 import { isDouble } from '@/engine/tile';
 
@@ -9,7 +9,7 @@ interface FlyingTileProps {
   tile: TileType;
   reversed: boolean;
   fromRef: React.RefObject<HTMLDivElement | null>;
-  toRef: React.RefObject<HTMLDivElement | null>;
+  getToElement: () => HTMLDivElement | null;
   onComplete: () => void;
   duration?: number;
 }
@@ -18,7 +18,7 @@ export default function FlyingTile({
   tile,
   reversed,
   fromRef,
-  toRef,
+  getToElement,
   onComplete,
   duration = 500,
 }: FlyingTileProps) {
@@ -33,7 +33,7 @@ export default function FlyingTile({
   useEffect(() => {
     if (hasAnimated.current) return;
     const from = fromRef.current;
-    const to = toRef.current;
+    const to = getToElement();
     if (!from || !to) {
       onComplete();
       return;
@@ -47,7 +47,6 @@ export default function FlyingTile({
     const endX = toRect.left + toRect.width / 2 - 36;
     const endY = toRect.top + toRect.height / 2 - 18;
 
-    // Start position (at the player's hand)
     setStyle({
       position: 'fixed',
       zIndex: 100,
@@ -59,7 +58,6 @@ export default function FlyingTile({
       transition: 'none',
     });
 
-    // Trigger transition to board center after a frame
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         hasAnimated.current = true;
@@ -79,7 +77,7 @@ export default function FlyingTile({
 
     const timer = setTimeout(onComplete, duration + 50);
     return () => clearTimeout(timer);
-  }, [fromRef, toRef, duration, onComplete]);
+  }, [fromRef, getToElement, duration, onComplete]);
 
   return (
     <div style={style}>

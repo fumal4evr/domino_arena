@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { BoardState, BoardEnd } from '@/engine/types';
 import Tile from './Tile';
 import { isDouble } from '@/engine/tile';
@@ -15,15 +15,27 @@ interface BoardProps {
   hiddenTileId: string | null;
 }
 
-export default function Board({
+export interface BoardHandle {
+  getLeftEndRef: () => HTMLDivElement | null;
+  getRightEndRef: () => HTMLDivElement | null;
+}
+
+const Board = forwardRef<BoardHandle, BoardProps>(function Board({
   board,
   showEndButtons,
   validEnds,
   onEndClick,
   lastMove,
   hiddenTileId,
-}: BoardProps) {
+}, ref) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const leftEndRef = useRef<HTMLDivElement>(null);
+  const rightEndRef = useRef<HTMLDivElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    getLeftEndRef: () => leftEndRef.current,
+    getRightEndRef: () => rightEndRef.current,
+  }));
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -42,6 +54,8 @@ export default function Board({
     );
   }
 
+  const lastIdx = board.chain.length - 1;
+
   return (
     <div className="flex items-center justify-center h-full relative">
       {showEndButtons && validEnds.includes('left') && (
@@ -59,15 +73,18 @@ export default function Board({
         style={{ scrollBehavior: 'smooth' }}
       >
         <div className="board-chain">
-          {board.chain.map((played) => {
+          {board.chain.map((played, idx) => {
             const isHidden = played.tile.id === hiddenTileId;
             const isLastPlayed = lastMove && played.tile.id === lastMove.tileId;
             const key = isLastPlayed
               ? `${played.tile.id}-${lastMove.timestamp}`
               : played.tile.id;
+            // Attach refs to the first and last tile wrappers
+            const tileRef = idx === 0 ? leftEndRef : idx === lastIdx ? rightEndRef : undefined;
             return (
               <div
                 key={key}
+                ref={tileRef}
                 className={`flex-shrink-0 ${isHidden ? '' : isLastPlayed ? 'tile-pop' : ''}`}
                 style={isHidden ? { opacity: 0 } : undefined}
               >
@@ -94,4 +111,6 @@ export default function Board({
       )}
     </div>
   );
-}
+});
+
+export default Board;

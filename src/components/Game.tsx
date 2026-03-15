@@ -3,7 +3,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { PlayerPosition } from '@/engine/types';
 import { useGame, LastMoveInfo } from '@/hooks/useGame';
-import Board from './Board';
+import Board, { BoardHandle } from './Board';
 import PlayerHand from './PlayerHand';
 import Scoreboard from './Scoreboard';
 import GameLog from './GameLog';
@@ -35,6 +35,7 @@ export default function Game() {
   const eastRef = useRef<HTMLDivElement>(null);
   const westRef = useRef<HTMLDivElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
+  const boardHandle = useRef<BoardHandle>(null);
 
   const playerRefs: Record<PlayerPosition, React.RefObject<HTMLDivElement | null>> = {
     north: northRef,
@@ -104,6 +105,7 @@ export default function Game() {
           }}
         >
           <Board
+            ref={boardHandle}
             board={board}
             showEndButtons={!!selectedTile && validEnds.length > 1}
             validEnds={validEnds}
@@ -161,7 +163,12 @@ export default function Game() {
           tile={flyingMove.tile}
           reversed={flyingMove.reversed}
           fromRef={playerRefs[flyingMove.playerPosition]}
-          toRef={boardRef}
+          getToElement={() => {
+            if (!boardHandle.current) return boardRef.current;
+            return flyingMove.end === 'left'
+              ? boardHandle.current.getLeftEndRef()
+              : boardHandle.current.getRightEndRef();
+          }}
           onComplete={onFlyComplete}
         />
       )}

@@ -29,6 +29,7 @@ export interface LastMoveInfo {
   tileId: string;
   tile: Tile;
   reversed: boolean;
+  end: BoardEnd;
   timestamp: number;
 }
 
@@ -82,6 +83,7 @@ export function useGame() {
               tileId: lastAction.tile.id,
               tile: lastAction.tile,
               reversed: placed?.reversed ?? false,
+              end: lastAction.end,
               timestamp: Date.now(),
             });
           }
@@ -169,6 +171,7 @@ export function useGame() {
               tileId: tile.id,
               tile,
               reversed: placed?.reversed ?? false,
+              end: ends[0],
               timestamp: Date.now(),
             });
             if (
@@ -214,6 +217,7 @@ export function useGame() {
           tileId: selectedTile.id,
           tile: selectedTile,
           reversed: placed?.reversed ?? false,
+          end,
           timestamp: Date.now(),
         });
         if (
