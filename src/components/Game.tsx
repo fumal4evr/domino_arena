@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { PlayerPosition } from '@/engine/types';
+import { PlayerPosition, TURN_ORDER } from '@/engine/types';
 import { useGame, LastMoveInfo } from '@/hooks/useGame';
+import { handPipCount } from '@/engine/tile';
 import Board, { BoardHandle } from './Board';
 import PlayerHand from './PlayerHand';
 import Scoreboard from './Scoreboard';
@@ -30,6 +31,8 @@ export default function Game() {
 
   const { players, teams, board, currentPlayer, phase, round, turnHistory, roundResults, winner } =
     gameState;
+
+  const revealAll = phase === 'round_over' || phase === 'game_over';
 
   // Refs for player hand areas and board center
   const northRef = useRef<HTMLDivElement>(null);
@@ -77,6 +80,7 @@ export default function Game() {
             selectedTile={null}
             validMoves={[]}
             onTileClick={() => {}}
+            revealTiles={revealAll}
           />
         </div>
       </div>
@@ -93,13 +97,14 @@ export default function Game() {
             selectedTile={null}
             validMoves={[]}
             onTileClick={() => {}}
+            revealTiles={revealAll}
           />
         </div>
 
         {/* Board */}
         <div
           ref={boardRef}
-          className="flex-1 mx-2 rounded-xl min-h-32 relative"
+          className="flex-1 mx-2 rounded-xl min-h-32 relative min-w-0 overflow-hidden"
           style={{
             background: 'var(--table-dark)',
             border: '2px solid rgba(255,255,255,0.1)',
@@ -127,6 +132,7 @@ export default function Game() {
             selectedTile={null}
             validMoves={[]}
             onTileClick={() => {}}
+            revealTiles={revealAll}
           />
         </div>
       </div>
@@ -201,12 +207,33 @@ export default function Game() {
                     {result.blocked ? '🔒 Blocked!' : '🎉 Domino!'}
                   </p>
                   <p className="text-yellow-300 text-xl font-bold mb-1">
-                    {result.winningTeam}
-                    {result.points > 0 ? ` +${result.points} pts` : ''}
+                    {result.winningTeam === 'Tie' ? 'Tie — both teams penalized' : `${result.winningTeam} wins the round!`}
                   </p>
                 </>
               );
             })()}
+
+            {/* Per-player remaining pip counts */}
+            <div className="mt-4 bg-black/30 rounded-lg p-3">
+              <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">
+                Remaining Pips
+              </div>
+              <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
+                {TURN_ORDER.map((pos) => {
+                  const p = players[pos];
+                  const pips = handPipCount(p.hand);
+                  return (
+                    <div key={pos} className="flex justify-between gap-2">
+                      <span className="text-gray-300">{p.name}</span>
+                      <span className={pips === 0 ? 'text-green-400 font-bold' : 'text-red-300'}>
+                        {pips}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="mt-4 space-y-1">
               {teams.map((t) => (
                 <div key={t.name} className="flex justify-between gap-8">

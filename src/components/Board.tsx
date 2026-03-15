@@ -33,6 +33,8 @@ const Board = forwardRef<BoardHandle, BoardProps>(function Board({
   const leftEndRef = useRef<HTMLDivElement>(null);
   const rightEndRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
+  const [chainNaturalW, setChainNaturalW] = useState(0);
+  const [chainNaturalH, setChainNaturalH] = useState(0);
 
   useImperativeHandle(ref, () => ({
     getLeftEndRef: () => leftEndRef.current,
@@ -42,9 +44,12 @@ const Board = forwardRef<BoardHandle, BoardProps>(function Board({
   const recalcScale = useCallback(() => {
     if (!containerRef.current || !chainRef.current) return;
     const containerW = containerRef.current.clientWidth;
-    const chainW = chainRef.current.scrollWidth;
-    if (chainW > containerW) {
-      setScale(Math.max(0.35, containerW / chainW));
+    const naturalW = chainRef.current.scrollWidth;
+    const naturalH = chainRef.current.scrollHeight;
+    setChainNaturalW(naturalW);
+    setChainNaturalH(naturalH);
+    if (naturalW > containerW && containerW > 0) {
+      setScale(Math.max(0.3, containerW / naturalW));
     } else {
       setScale(1);
     }
@@ -84,39 +89,48 @@ const Board = forwardRef<BoardHandle, BoardProps>(function Board({
         </button>
       )}
 
+      {/* Wrapper sized to the scaled chain so layout respects the visual size */}
       <div
-        ref={chainRef}
-        className="board-chain"
         style={{
-          transform: `scale(${scale})`,
-          transformOrigin: 'center center',
-          transition: 'transform 0.3s ease',
+          width: chainNaturalW > 0 ? chainNaturalW * scale : undefined,
+          height: chainNaturalH > 0 ? chainNaturalH * scale : undefined,
+          flexShrink: 0,
         }}
       >
-        {board.chain.map((played, idx) => {
-          const isHidden = played.tile.id === hiddenTileId;
-          const isLastPlayed = lastMove && played.tile.id === lastMove.tileId;
-          const key = isLastPlayed
-            ? `${played.tile.id}-${lastMove.timestamp}`
-            : played.tile.id;
-          const tileRef = idx === 0 ? leftEndRef : idx === lastIdx ? rightEndRef : undefined;
-          return (
-            <div
-              key={key}
-              ref={tileRef}
-              className={`flex-shrink-0 ${isHidden ? '' : isLastPlayed ? 'tile-pop' : ''}`}
-              style={isHidden ? { opacity: 0 } : undefined}
-            >
-              <Tile
-                tile={played.tile}
-                horizontal={!isDouble(played.tile)}
-                reversed={played.reversed}
-                played
-                size="md"
-              />
-            </div>
-          );
-        })}
+        <div
+          ref={chainRef}
+          className="board-chain"
+          style={{
+            transform: `scale(${scale})`,
+            transformOrigin: 'left center',
+            transition: 'transform 0.3s ease',
+          }}
+        >
+          {board.chain.map((played, idx) => {
+            const isHidden = played.tile.id === hiddenTileId;
+            const isLastPlayed = lastMove && played.tile.id === lastMove.tileId;
+            const key = isLastPlayed
+              ? `${played.tile.id}-${lastMove.timestamp}`
+              : played.tile.id;
+            const tileRef = idx === 0 ? leftEndRef : idx === lastIdx ? rightEndRef : undefined;
+            return (
+              <div
+                key={key}
+                ref={tileRef}
+                className={`flex-shrink-0 ${isHidden ? '' : isLastPlayed ? 'tile-pop' : ''}`}
+                style={isHidden ? { opacity: 0 } : undefined}
+              >
+                <Tile
+                  tile={played.tile}
+                  horizontal={!isDouble(played.tile)}
+                  reversed={played.reversed}
+                  played
+                  size="md"
+                />
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {showEndButtons && validEnds.includes('right') && (
