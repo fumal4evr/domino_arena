@@ -200,7 +200,7 @@ function resolveRoundEnd(
     loserTeam.score += points;
     winningTeamName = winnerTeam.name;
   } else {
-    // Blocked — each team gets their own remaining pips as penalty
+    // Blocked — only the losing team (more pips) gets their pips as penalty
     blocked = true;
     const teamPips = teams.map((t) => ({
       team: t,
@@ -210,17 +210,18 @@ function resolveRoundEnd(
       ),
     }));
 
-    for (const tp of teamPips) {
-      tp.team.score += tp.pips;
-    }
-
     const [a, b] = teamPips;
-    points = a.pips + b.pips;
     if (a.pips < b.pips) {
+      b.team.score += b.pips;
+      points = b.pips;
       winningTeamName = a.team.name;
     } else if (b.pips < a.pips) {
+      a.team.score += a.pips;
+      points = a.pips;
       winningTeamName = b.team.name;
     } else {
+      // Tie — no points awarded
+      points = 0;
       winningTeamName = 'Tie';
     }
   }
