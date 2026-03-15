@@ -43,15 +43,14 @@ const Board = forwardRef<BoardHandle, BoardProps>(function Board({
   const recalcScale = useCallback(() => {
     if (!containerRef.current || !chainRef.current) return;
     const containerW = containerRef.current.clientWidth;
+    const containerH = containerRef.current.clientHeight;
     const naturalW = chainRef.current.scrollWidth;
     const naturalH = chainRef.current.scrollHeight;
     setChainNaturalW(naturalW);
     setChainNaturalH(naturalH);
-    if (naturalW > containerW && containerW > 0) {
-      setScale(Math.max(0.3, containerW / naturalW));
-    } else {
-      setScale(1);
-    }
+    const scaleW = containerW > 0 && naturalW > containerW ? containerW / naturalW : 1;
+    const scaleH = containerH > 0 && naturalH > containerH ? containerH / naturalH : 1;
+    setScale(Math.max(0.3, Math.min(scaleW, scaleH)));
   }, []);
 
   useLayoutEffect(() => {
@@ -98,7 +97,7 @@ const Board = forwardRef<BoardHandle, BoardProps>(function Board({
           className="board-chain"
           style={{
             transform: `scale(${scale})`,
-            transformOrigin: 'left center',
+            transformOrigin: 'left top',
             transition: 'transform 0.3s ease',
           }}
         >
