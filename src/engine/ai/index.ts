@@ -13,3 +13,4 @@ export interface AIStrategy {
 }
 
 export { basicAI } from './basic-ai';
+export { coachAI } from './coach-ai';

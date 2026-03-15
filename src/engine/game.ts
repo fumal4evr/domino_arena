@@ -19,7 +19,7 @@ import { dealTiles, findDoubleSixHolder, handPipCount } from './tile';
 import { RuleEngine } from './rules';
 import { BASE_RULES } from './rules/base-rules';
 import { PARTNER_RULES } from './rules/partner-rules';
-import { AIStrategy, basicAI } from './ai';
+import { AIStrategy, coachAI } from './ai';
 
 const WINNING_SCORE = 100;
 
@@ -276,7 +276,7 @@ export function mustPass(state: GameState, rules: RuleEngine): boolean {
 export function executeAITurn(
   state: GameState,
   rules: RuleEngine,
-  strategy: AIStrategy = basicAI
+  strategy: AIStrategy = coachAI
 ): GameState {
   const player = state.players[state.currentPlayer];
   const move = strategy.chooseMove(player.hand, state, rules);
