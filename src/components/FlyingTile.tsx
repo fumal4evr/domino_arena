@@ -1,4 +1,3 @@
-'use client';
 
 import React, { useLayoutEffect, useState, useRef } from 'react';
 import { Tile as TileType } from '@/engine/types';

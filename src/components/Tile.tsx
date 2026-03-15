@@ -1,4 +1,3 @@
-'use client';
 
 import React from 'react';
 import { Tile as TileType, PipValue } from '@/engine/types';

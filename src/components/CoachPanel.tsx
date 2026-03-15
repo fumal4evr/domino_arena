@@ -1,4 +1,3 @@
-'use client';
 
 import React from 'react';
 import { CoachAdvice, HandAnalysis, MoveSuggestion } from '@/engine/coach';

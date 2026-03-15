@@ -1,4 +1,3 @@
-'use client';
 
 import React, { useRef, useEffect, useLayoutEffect, useImperativeHandle, forwardRef, useState, useCallback } from 'react';
 import { BoardState, BoardEnd } from '@/engine/types';

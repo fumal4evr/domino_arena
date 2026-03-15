@@ -1,4 +1,3 @@
-'use client';
 
 import React, { useRef, useEffect } from 'react';
 import { TurnAction, isPassMove } from '@/engine/types';
