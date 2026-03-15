@@ -156,6 +156,23 @@ export default function Game() {
             ))}
           </div>
 
+          {/* Compact coach suggestion */}
+          {coachingEnabled && currentPlayer === 'south' && phase === 'playing' && (
+            <div className="flex-shrink-0 bg-cyan-900/50 border border-cyan-500/30 rounded-md px-2 py-1 text-xs flex items-center gap-1.5">
+              <span>🧠</span>
+              {coachAdvice?.suggestion ? (
+                <>
+                  <span className="font-mono text-yellow-200">
+                    [{coachAdvice.suggestion.move.tile.left}|{coachAdvice.suggestion.move.tile.right}]
+                  </span>
+                  <span className="text-cyan-300">→ {coachAdvice.suggestion.move.end}</span>
+                </>
+              ) : (
+                <span className="text-gray-400">pass</span>
+              )}
+            </div>
+          )}
+
           {/* Your hand */}
           <div ref={southRef} className="flex-1 flex justify-center">
             <PlayerHand
