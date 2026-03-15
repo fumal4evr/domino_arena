@@ -36,6 +36,12 @@ const Board = forwardRef<BoardHandle, BoardProps>(function Board({
   const [chainNaturalW, setChainNaturalW] = useState(0);
   const [chainNaturalH, setChainNaturalH] = useState(0);
 
+  // Filter out the tile that is currently flying — it will be added to the
+  // chain once the animation finishes, triggering a clean re-layout.
+  const visibleChain = hiddenTileId
+    ? board.chain.filter((p) => p.tile.id !== hiddenTileId)
+    : board.chain;
+
   useImperativeHandle(ref, () => ({
     getLeftEndRef: () => leftEndRef.current,
     getRightEndRef: () => rightEndRef.current,
@@ -55,10 +61,10 @@ const Board = forwardRef<BoardHandle, BoardProps>(function Board({
     }
   }, []);
 
-  // Recalc when chain length changes
+  // Recalc when visible chain length changes
   useEffect(() => {
     recalcScale();
-  }, [board.chain.length, recalcScale]);
+  }, [visibleChain.length, recalcScale]);
 
   // Recalc on window resize
   useEffect(() => {
@@ -66,7 +72,7 @@ const Board = forwardRef<BoardHandle, BoardProps>(function Board({
     return () => window.removeEventListener('resize', recalcScale);
   }, [recalcScale]);
 
-  if (board.chain.length === 0) {
+  if (visibleChain.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-gray-400 text-lg italic">
@@ -76,7 +82,7 @@ const Board = forwardRef<BoardHandle, BoardProps>(function Board({
     );
   }
 
-  const lastIdx = board.chain.length - 1;
+  const lastIdx = visibleChain.length - 1;
 
   return (
     <div ref={containerRef} className="flex items-center justify-center h-full relative overflow-hidden">
@@ -106,8 +112,7 @@ const Board = forwardRef<BoardHandle, BoardProps>(function Board({
             transition: 'transform 0.3s ease',
           }}
         >
-          {board.chain.map((played, idx) => {
-            const isHidden = played.tile.id === hiddenTileId;
+          {visibleChain.map((played, idx) => {
             const isLastPlayed = lastMove && played.tile.id === lastMove.tileId;
             const key = isLastPlayed
               ? `${played.tile.id}-${lastMove.timestamp}`
@@ -117,8 +122,7 @@ const Board = forwardRef<BoardHandle, BoardProps>(function Board({
               <div
                 key={key}
                 ref={tileRef}
-                className={`flex-shrink-0 ${isHidden ? '' : isLastPlayed ? 'tile-pop' : ''}`}
-                style={isHidden ? { opacity: 0 } : undefined}
+                className={`flex-shrink-0 ${isLastPlayed ? 'tile-pop' : ''}`}
               >
                 <Tile
                   tile={played.tile}

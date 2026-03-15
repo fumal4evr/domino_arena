@@ -204,9 +204,10 @@ export default function Game() {
           fromRef={playerRefs[flyingMove.playerPosition]}
           getToElement={() => {
             if (!boardHandle.current) return boardRef.current;
-            return flyingMove.end === 'left'
+            const endEl = flyingMove.end === 'left'
               ? boardHandle.current.getLeftEndRef()
               : boardHandle.current.getRightEndRef();
+            return endEl || boardRef.current;
           }}
           duration={animDuration}
           onComplete={onFlyComplete}
