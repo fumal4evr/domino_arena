@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useLayoutEffect, useState, useRef } from 'react';
 import { Tile as TileType } from '@/engine/types';
 import Tile from './Tile';
 import { isDouble } from '@/engine/tile';
@@ -30,7 +30,9 @@ export default function FlyingTile({
   });
   const hasAnimated = useRef(false);
 
-  useEffect(() => {
+  // useLayoutEffect so we measure after Board's layout (useLayoutEffect) has
+  // settled the chain scale — positions will already be correct.
+  useLayoutEffect(() => {
     if (hasAnimated.current) return;
     const from = fromRef.current;
     const to = getToElement();
@@ -42,12 +44,12 @@ export default function FlyingTile({
     const fromRect = from.getBoundingClientRect();
     const toRect = to.getBoundingClientRect();
 
-    const startX = fromRect.left + fromRect.width / 2 - 36;
-    const startY = fromRect.top + fromRect.height / 2 - 18;
-    const endX = toRect.left + toRect.width / 2 - 36;
-    const endY = toRect.top + toRect.height / 2 - 18;
+    // Use center points; translate(-50%,-50%) handles the offset.
+    const startX = fromRect.left + fromRect.width / 2;
+    const startY = fromRect.top + fromRect.height / 2;
+    const endX = toRect.left + toRect.width / 2;
+    const endY = toRect.top + toRect.height / 2;
 
-    // Start tile at 1.5x scale so it's very visible during flight
     setStyle({
       position: 'fixed',
       zIndex: 100,
@@ -55,7 +57,7 @@ export default function FlyingTile({
       left: startX,
       top: startY,
       opacity: 1,
-      transform: 'scale(1.5)',
+      transform: 'translate(-50%, -50%) scale(1.5)',
       transition: 'none',
       filter: 'drop-shadow(0 0 20px rgba(255, 215, 0, 0.9))',
     });
@@ -70,7 +72,7 @@ export default function FlyingTile({
           left: endX,
           top: endY,
           opacity: 1,
-          transform: 'scale(1)',
+          transform: 'translate(-50%, -50%) scale(1)',
           transition: `left ${duration}ms cubic-bezier(0.22, 1, 0.36, 1), top ${duration}ms cubic-bezier(0.22, 1, 0.36, 1), transform ${duration}ms cubic-bezier(0.22, 1, 0.36, 1), filter ${duration}ms ease-out`,
           filter: 'drop-shadow(0 0 6px rgba(255, 215, 0, 0.4))',
         });
