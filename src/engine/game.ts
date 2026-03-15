@@ -184,7 +184,7 @@ function resolveRoundEnd(
   let blocked = false;
 
   if (winner) {
-    // Player went out — opposing team's pips go to winner's team
+    // Player went out — opposing team gets their own remaining pips as penalty
     const winnerTeam = getTeamForPlayer(winner, teams);
     const loserTeam = teams.find((t) => t !== winnerTeam)!;
 
@@ -192,10 +192,10 @@ function resolveRoundEnd(
       (sum, pos) => sum + handPipCount(state.players[pos].hand),
       0
     );
-    winnerTeam.score += points;
+    loserTeam.score += points;
     winningTeamName = winnerTeam.name;
   } else {
-    // Blocked — team with fewer remaining pips wins the points
+    // Blocked — each team gets their own remaining pips as penalty
     blocked = true;
     const teamPips = teams.map((t) => ({
       team: t,
@@ -205,18 +205,17 @@ function resolveRoundEnd(
       ),
     }));
 
+    for (const tp of teamPips) {
+      tp.team.score += tp.pips;
+    }
+
     const [a, b] = teamPips;
+    points = a.pips + b.pips;
     if (a.pips < b.pips) {
-      points = b.pips;
-      a.team.score += points;
       winningTeamName = a.team.name;
     } else if (b.pips < a.pips) {
-      points = a.pips;
-      b.team.score += points;
       winningTeamName = b.team.name;
     } else {
-      // Tie — no one scores
-      points = 0;
       winningTeamName = 'Tie';
     }
   }
@@ -227,8 +226,9 @@ function resolveRoundEnd(
     blocked,
   };
 
-  // Check if game is over
-  const gameWinner = teams.find((t) => t.score >= WINNING_SCORE);
+  // Check if game is over — first team to reach 100 loses
+  const loser = teams.find((t) => t.score >= WINNING_SCORE);
+  const gameWinner = loser ? teams.find((t) => t !== loser)! : null;
 
   return {
     ...state,

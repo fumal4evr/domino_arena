@@ -27,7 +27,7 @@ export default function Scoreboard({ teams, round }: ScoreboardProps) {
           </div>
         ))}
       </div>
-      <div className="text-xs text-gray-500 mt-2">First to 100 wins</div>
+      <div className="text-xs text-gray-500 mt-2">First to 100 loses</div>
     </div>
   );
 }
