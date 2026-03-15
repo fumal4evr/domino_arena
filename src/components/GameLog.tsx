@@ -23,21 +23,19 @@ export default function GameLog({ history }: GameLogProps) {
     }
   }, [history.length]);
 
-  const recentHistory = history.slice(-12);
-
   return (
-    <div className="bg-black/30 rounded-lg p-3 min-w-48">
+    <div className="bg-black/30 rounded-lg p-3 min-w-48 max-w-56 flex flex-col" style={{ maxHeight: '40vh' }}>
       <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">
-        Game Log
+        Game Log ({history.length})
       </div>
       <div
         ref={scrollRef}
-        className="space-y-1 max-h-40 overflow-y-auto text-xs"
+        className="space-y-1 overflow-y-auto text-xs flex-1"
       >
-        {recentHistory.length === 0 && (
+        {history.length === 0 && (
           <div className="text-gray-500 italic">No moves yet</div>
         )}
-        {recentHistory.map((action, idx) => {
+        {history.map((action, idx) => {
           const name = POSITION_NAMES[action.playerPosition];
           if (isPassMove(action)) {
             return (
