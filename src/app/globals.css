@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+:root {
+  --background: #1a472a;
+  --foreground: #f5f5f0;
+  --table-green: #2d6a4f;
+  --table-dark: #1a472a;
+  --tile-bg: #fffef5;
+  --tile-border: #8b7355;
+  --tile-selected: #ffd700;
+  --pip-color: #1a1a1a;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  overflow: hidden;
+}
+
+/* Domino tile styling */
+.domino-tile {
+  background: var(--tile-bg);
+  border: 2px solid var(--tile-border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+}
+
+.domino-tile:hover:not(.face-down):not(.played) {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.domino-tile.selected {
+  border-color: var(--tile-selected);
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.6);
+  transform: translateY(-8px);
+}
+
+.domino-tile.face-down {
+  background: #3a3a8a;
+  cursor: default;
+  border-color: #2a2a6a;
+}
+
+.domino-tile.valid-target {
+  border-color: #4ade80;
+  box-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+.domino-tile.playable {
+  border-color: #60a5fa;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 8px rgba(74, 222, 128, 0.3); }
+  50% { box-shadow: 0 0 16px rgba(74, 222, 128, 0.7); }
+}
+
+/* Board scroll */
+.board-chain {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 20px;
+  min-width: min-content;
+}
+
+/* Player area highlights */
+.player-area.active {
+  background: rgba(255, 215, 0, 0.1);
+  border-radius: 8px;
+}
+
+/* Pip dots */
+.pip {
+  width: 6px;
+  height: 6px;
+  background: var(--pip-color);
+  border-radius: 50%;
+  position: absolute;
+}
+
+/* Animation for AI playing */
+@keyframes slide-in {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.tile-enter {
+  animation: slide-in 0.3s ease-out;
+}
