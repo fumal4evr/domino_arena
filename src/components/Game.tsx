@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { PlayerPosition, TURN_ORDER } from '@/engine/types';
 import { useGame, LastMoveInfo } from '@/hooks/useGame';
 import { handPipCount } from '@/engine/tile';
@@ -58,13 +58,13 @@ export default function Game() {
   const [hiddenTileId, setHiddenTileId] = useState<string | null>(null);
   const lastMoveTimestamp = useRef<number>(0);
 
-  // When lastMove changes, start a flying animation
-  useEffect(() => {
-    if (!lastMove || lastMove.timestamp === lastMoveTimestamp.current) return;
+  // Synchronously start flying animation when lastMove changes (during render,
+  // before paint) so the tile on the board is hidden from the very first frame.
+  if (lastMove && lastMove.timestamp !== lastMoveTimestamp.current) {
     lastMoveTimestamp.current = lastMove.timestamp;
     setFlyingMove(lastMove);
     setHiddenTileId(lastMove.tileId);
-  }, [lastMove]);
+  }
 
   const onFlyComplete = useCallback(() => {
     setFlyingMove(null);
