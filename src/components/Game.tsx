@@ -44,6 +44,9 @@ export default function Game() {
     west: westRef,
   };
 
+  // Animation duration state
+  const [animDuration, setAnimDuration] = useState(1000);
+
   // Flying tile state
   const [flyingMove, setFlyingMove] = useState<LastMoveInfo | null>(null);
   const [hiddenTileId, setHiddenTileId] = useState<string | null>(null);
@@ -134,7 +137,12 @@ export default function Game() {
         {/* Scoreboard + Speed */}
         <div className="flex-shrink-0 flex flex-col gap-2">
           <Scoreboard teams={teams} round={round} />
-          <SpeedSlider value={aiDelay} onChange={setAiDelay} />
+          <SpeedSlider
+            aiDelay={aiDelay}
+            onAiDelayChange={setAiDelay}
+            animDuration={animDuration}
+            onAnimDurationChange={setAnimDuration}
+          />
         </div>
 
         {/* Your hand */}
@@ -169,6 +177,7 @@ export default function Game() {
               ? boardHandle.current.getLeftEndRef()
               : boardHandle.current.getRightEndRef();
           }}
+          duration={animDuration}
           onComplete={onFlyComplete}
         />
       )}
