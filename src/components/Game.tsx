@@ -19,6 +19,8 @@ export default function Game() {
     isAIThinking,
     aiDelay,
     setAiDelay,
+    animDuration,
+    setAnimDuration,
     lastMove,
     selectTile,
     playOnEnd,
@@ -43,9 +45,6 @@ export default function Game() {
     east: eastRef,
     west: westRef,
   };
-
-  // Animation duration state
-  const [animDuration, setAnimDuration] = useState(1000);
 
   // Flying tile state
   const [flyingMove, setFlyingMove] = useState<LastMoveInfo | null>(null);

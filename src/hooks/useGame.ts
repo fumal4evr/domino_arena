@@ -39,15 +39,24 @@ export function useGame() {
   const [validEnds, setValidEnds] = useState<BoardEnd[]>([]);
   const [isAIThinking, setIsAIThinking] = useState(false);
   const [aiDelay, setAiDelay] = useState(DEFAULT_DELAY_MS);
+  const [animDuration, setAnimDuration] = useState(1500);
   const [lastMove, setLastMove] = useState<LastMoveInfo | null>(null);
   const rulesRef = useRef<RuleEngine>(createGameRuleEngine());
   const aiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const aiDelayRef = useRef(aiDelay);
+  const animDurationRef = useRef(animDuration);
 
-  // Keep ref in sync so callbacks always read the latest value
+  // Keep refs in sync so callbacks always read the latest value
   useEffect(() => {
     aiDelayRef.current = aiDelay;
   }, [aiDelay]);
+  useEffect(() => {
+    animDurationRef.current = animDuration;
+  }, [animDuration]);
+
+  // Effective delay between AI turns: must wait for animation to finish
+  const getEffectiveDelay = () =>
+    Math.max(aiDelayRef.current, animDurationRef.current + 200);
 
   const rules = rulesRef.current;
 
@@ -64,6 +73,7 @@ export function useGame() {
       if (state.players[state.currentPlayer].isHuman) return;
 
       setIsAIThinking(true);
+      const delay = getEffectiveDelay();
       aiTimerRef.current = setTimeout(() => {
         setGameState((prev) => {
           if (prev.phase !== 'playing') return prev;
@@ -92,7 +102,7 @@ export function useGame() {
             newState.phase === 'playing' &&
             !newState.players[newState.currentPlayer].isHuman
           ) {
-            setTimeout(() => processAITurns(newState), aiDelayRef.current);
+            setTimeout(() => processAITurns(newState), getEffectiveDelay());
           } else {
             setIsAIThinking(false);
 
@@ -109,7 +119,7 @@ export function useGame() {
                     passed.phase === 'playing' &&
                     !passed.players[passed.currentPlayer].isHuman
                   ) {
-                    setTimeout(() => processAITurns(passed), aiDelayRef.current);
+                    setTimeout(() => processAITurns(passed), getEffectiveDelay());
                   }
                   return passed;
                 });
@@ -119,7 +129,7 @@ export function useGame() {
 
           return newState;
         });
-      }, aiDelayRef.current);
+      }, delay);
     },
     [rules]
   );
@@ -256,6 +266,8 @@ export function useGame() {
     isAIThinking,
     aiDelay,
     setAiDelay,
+    animDuration,
+    setAnimDuration,
     lastMove,
     selectTile,
     playOnEnd,
