@@ -74,7 +74,7 @@ export default function Game() {
   }, []);
 
   return (
-    <div className="h-screen w-screen flex flex-col" style={{ background: 'var(--table-green)' }}>
+    <div className="w-screen flex flex-col" style={{ background: 'var(--table-green)', height: '100dvh' }}>
       {/* Top: North player */}
       <div className={`flex justify-center items-start gap-4 ${isCompact ? 'pt-1 px-2' : 'pt-2 px-4'}`}>
         <div ref={northRef} className="flex-1 flex justify-center">
