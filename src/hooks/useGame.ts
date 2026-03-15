@@ -27,6 +27,8 @@ const DEFAULT_DELAY_MS = 1500;
 export interface LastMoveInfo {
   playerPosition: PlayerPosition;
   tileId: string;
+  tile: Tile;
+  reversed: boolean;
   timestamp: number;
 }
 
@@ -72,9 +74,14 @@ export function useGame() {
           // Track last move for animation
           const lastAction = newState.turnHistory[newState.turnHistory.length - 1];
           if (lastAction && !isPassMove(lastAction)) {
+            const placed = newState.board.chain.find(
+              (p) => p.tile.id === lastAction.tile.id
+            );
             setLastMove({
               playerPosition: whoPlayed,
               tileId: lastAction.tile.id,
+              tile: lastAction.tile,
+              reversed: placed?.reversed ?? false,
               timestamp: Date.now(),
             });
           }
@@ -152,13 +159,18 @@ export function useGame() {
         if (!rules.hasHardViolation(move, gameState)) {
           setSelectedTile(null);
           setValidEnds([]);
-          setLastMove({
-            playerPosition: gameState.currentPlayer,
-            tileId: tile.id,
-            timestamp: Date.now(),
-          });
           setGameState((prev) => {
             const newState = executeMove(prev, move);
+            const placed = newState.board.chain.find(
+              (p) => p.tile.id === tile.id
+            );
+            setLastMove({
+              playerPosition: gameState.currentPlayer,
+              tileId: tile.id,
+              tile,
+              reversed: placed?.reversed ?? false,
+              timestamp: Date.now(),
+            });
             if (
               newState.phase === 'playing' &&
               !newState.players[newState.currentPlayer].isHuman
@@ -190,15 +202,20 @@ export function useGame() {
 
       if (rules.hasHardViolation(move, gameState)) return;
 
-      setLastMove({
-        playerPosition: gameState.currentPlayer,
-        tileId: selectedTile.id,
-        timestamp: Date.now(),
-      });
       setSelectedTile(null);
       setValidEnds([]);
       setGameState((prev) => {
         const newState = executeMove(prev, move);
+        const placed = newState.board.chain.find(
+          (p) => p.tile.id === selectedTile.id
+        );
+        setLastMove({
+          playerPosition: gameState.currentPlayer,
+          tileId: selectedTile.id,
+          tile: selectedTile,
+          reversed: placed?.reversed ?? false,
+          timestamp: Date.now(),
+        });
         if (
           newState.phase === 'playing' &&
           !newState.players[newState.currentPlayer].isHuman

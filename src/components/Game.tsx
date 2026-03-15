@@ -1,12 +1,14 @@
 'use client';
 
-import React from 'react';
-import { useGame } from '@/hooks/useGame';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
+import { PlayerPosition } from '@/engine/types';
+import { useGame, LastMoveInfo } from '@/hooks/useGame';
 import Board from './Board';
 import PlayerHand from './PlayerHand';
 import Scoreboard from './Scoreboard';
 import GameLog from './GameLog';
 import SpeedSlider from './SpeedSlider';
+import FlyingTile from './FlyingTile';
 
 export default function Game() {
   const {
@@ -27,11 +29,43 @@ export default function Game() {
   const { players, teams, board, currentPlayer, phase, round, turnHistory, roundResults, winner } =
     gameState;
 
+  // Refs for player hand areas and board center
+  const northRef = useRef<HTMLDivElement>(null);
+  const southRef = useRef<HTMLDivElement>(null);
+  const eastRef = useRef<HTMLDivElement>(null);
+  const westRef = useRef<HTMLDivElement>(null);
+  const boardRef = useRef<HTMLDivElement>(null);
+
+  const playerRefs: Record<PlayerPosition, React.RefObject<HTMLDivElement | null>> = {
+    north: northRef,
+    south: southRef,
+    east: eastRef,
+    west: westRef,
+  };
+
+  // Flying tile state
+  const [flyingMove, setFlyingMove] = useState<LastMoveInfo | null>(null);
+  const [hiddenTileId, setHiddenTileId] = useState<string | null>(null);
+  const lastMoveTimestamp = useRef<number>(0);
+
+  // When lastMove changes, start a flying animation
+  useEffect(() => {
+    if (!lastMove || lastMove.timestamp === lastMoveTimestamp.current) return;
+    lastMoveTimestamp.current = lastMove.timestamp;
+    setFlyingMove(lastMove);
+    setHiddenTileId(lastMove.tileId);
+  }, [lastMove]);
+
+  const onFlyComplete = useCallback(() => {
+    setFlyingMove(null);
+    setHiddenTileId(null);
+  }, []);
+
   return (
     <div className="h-screen w-screen flex flex-col" style={{ background: 'var(--table-green)' }}>
-      {/* Top: North player + Scoreboard */}
+      {/* Top: North player */}
       <div className="flex justify-center items-start gap-4 pt-2 px-4">
-        <div className="flex-1 flex justify-center">
+        <div ref={northRef} className="flex-1 flex justify-center">
           <PlayerHand
             tiles={players.north.hand}
             position="north"
@@ -47,7 +81,7 @@ export default function Game() {
       {/* Middle: West + Board + East */}
       <div className="flex-1 flex items-center px-2 min-h-0">
         {/* West player */}
-        <div className="flex-shrink-0">
+        <div ref={westRef} className="flex-shrink-0">
           <PlayerHand
             tiles={players.west.hand}
             position="west"
@@ -61,6 +95,7 @@ export default function Game() {
 
         {/* Board */}
         <div
+          ref={boardRef}
           className="flex-1 mx-2 rounded-xl min-h-32 relative"
           style={{
             background: 'var(--table-dark)',
@@ -74,11 +109,12 @@ export default function Game() {
             validEnds={validEnds}
             onEndClick={playOnEnd}
             lastMove={lastMove}
+            hiddenTileId={hiddenTileId}
           />
         </div>
 
         {/* East player */}
-        <div className="flex-shrink-0">
+        <div ref={eastRef} className="flex-shrink-0">
           <PlayerHand
             tiles={players.east.hand}
             position="east"
@@ -100,7 +136,7 @@ export default function Game() {
         </div>
 
         {/* Your hand */}
-        <div className="flex-1 flex justify-center">
+        <div ref={southRef} className="flex-1 flex justify-center">
           <PlayerHand
             tiles={players.south.hand}
             position="south"
@@ -118,8 +154,20 @@ export default function Game() {
         </div>
       </div>
 
+      {/* Flying tile overlay */}
+      {flyingMove && (
+        <FlyingTile
+          key={flyingMove.timestamp}
+          tile={flyingMove.tile}
+          reversed={flyingMove.reversed}
+          fromRef={playerRefs[flyingMove.playerPosition]}
+          toRef={boardRef}
+          onComplete={onFlyComplete}
+        />
+      )}
+
       {/* AI thinking indicator */}
-      {isAIThinking && phase === 'playing' && (
+      {isAIThinking && phase === 'playing' && !flyingMove && (
         <div className="fixed top-4 right-4 bg-black/60 text-yellow-300 px-3 py-1.5 rounded-lg text-sm animate-pulse">
           🤔 Thinking...
         </div>

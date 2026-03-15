@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useEffect } from 'react';
-import { BoardState, BoardEnd, PlayerPosition } from '@/engine/types';
+import { BoardState, BoardEnd } from '@/engine/types';
 import Tile from './Tile';
 import { isDouble } from '@/engine/tile';
 import { LastMoveInfo } from '@/hooks/useGame';
@@ -12,14 +12,8 @@ interface BoardProps {
   validEnds: BoardEnd[];
   onEndClick: (end: BoardEnd) => void;
   lastMove: LastMoveInfo | null;
+  hiddenTileId: string | null;
 }
-
-const DIRECTION_CLASS: Record<PlayerPosition, string> = {
-  north: 'fly-from-north',
-  south: 'fly-from-south',
-  east: 'fly-from-east',
-  west: 'fly-from-west',
-};
 
 export default function Board({
   board,
@@ -27,6 +21,7 @@ export default function Board({
   validEnds,
   onEndClick,
   lastMove,
+  hiddenTileId,
 }: BoardProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -65,18 +60,16 @@ export default function Board({
       >
         <div className="board-chain">
           {board.chain.map((played) => {
+            const isHidden = played.tile.id === hiddenTileId;
             const isLastPlayed = lastMove && played.tile.id === lastMove.tileId;
-            const animClass = isLastPlayed
-              ? DIRECTION_CLASS[lastMove.playerPosition]
-              : '';
-            // Only the newly placed tile gets a timestamp key to force re-mount & animation
             const key = isLastPlayed
               ? `${played.tile.id}-${lastMove.timestamp}`
               : played.tile.id;
             return (
               <div
                 key={key}
-                className={`flex-shrink-0 ${animClass}`}
+                className={`flex-shrink-0 ${isHidden ? '' : isLastPlayed ? 'tile-pop' : ''}`}
+                style={isHidden ? { opacity: 0 } : undefined}
               >
                 <Tile
                   tile={played.tile}
