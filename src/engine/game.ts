@@ -150,24 +150,29 @@ export function executePass(state: GameState): GameState {
 function advanceToNextPlayer(state: GameState): GameState {
   let candidate = nextPlayer(state.currentPlayer);
   let checkedCount = 0;
+  let currentState = state;
 
   while (checkedCount < 4) {
-    if (hasValidMove(state.players[candidate].hand, state.board)) {
-      return { ...state, currentPlayer: candidate };
+    if (hasValidMove(currentState.players[candidate].hand, currentState.board)) {
+      return { ...currentState, currentPlayer: candidate };
     }
 
-    // This player must pass — record it
-    if (candidate !== state.currentPlayer) {
-      // Only auto-record pass for players we're skipping
-      // (current player's pass was already recorded)
-    }
+    // Record a pass for this skipped player
+    const passAction: PassMove = {
+      playerPosition: candidate,
+      pass: true,
+    };
+    currentState = {
+      ...currentState,
+      turnHistory: [...currentState.turnHistory, passAction],
+    };
 
     candidate = nextPlayer(candidate);
     checkedCount++;
   }
 
   // All 4 players are blocked → round is locked
-  return resolveRoundEnd(state, null);
+  return resolveRoundEnd(currentState, null);
 }
 
 /**

@@ -13,10 +13,8 @@ import {
   initGame,
   startNewRound,
   executeMove,
-  executePass,
   executeAITurn,
   getValidMovesForCurrentPlayer,
-  mustPass,
   createGameRuleEngine,
 } from '@/engine/game';
 import { RuleEngine } from '@/engine/rules';
@@ -105,26 +103,6 @@ export function useGame() {
             setTimeout(() => processAITurns(newState), getEffectiveDelay());
           } else {
             setIsAIThinking(false);
-
-            if (
-              newState.phase === 'playing' &&
-              newState.players[newState.currentPlayer].isHuman &&
-              mustPass(newState, rules)
-            ) {
-              setTimeout(() => {
-                setGameState((s) => {
-                  if (s.phase !== 'playing') return s;
-                  const passed = executePass(s);
-                  if (
-                    passed.phase === 'playing' &&
-                    !passed.players[passed.currentPlayer].isHuman
-                  ) {
-                    setTimeout(() => processAITurns(passed), getEffectiveDelay());
-                  }
-                  return passed;
-                });
-              }, 500);
-            }
           }
 
           return newState;
