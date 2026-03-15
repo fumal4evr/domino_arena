@@ -19,6 +19,7 @@ import {
 } from '@/engine/game';
 import { RuleEngine } from '@/engine/rules';
 import { getValidPlacements } from '@/engine/board';
+import { getCoachAdvice, CoachAdvice } from '@/engine/coach';
 
 const DEFAULT_DELAY_MS = 1500;
 
@@ -39,6 +40,7 @@ export function useGame() {
   const [aiDelay, setAiDelay] = useState(DEFAULT_DELAY_MS);
   const [animDuration, setAnimDuration] = useState(1500);
   const [lastMove, setLastMove] = useState<LastMoveInfo | null>(null);
+  const [coachingEnabled, setCoachingEnabled] = useState(false);
   const rulesRef = useRef<RuleEngine>(createGameRuleEngine());
   const aiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const aiDelayRef = useRef(aiDelay);
@@ -63,6 +65,14 @@ export function useGame() {
     gameState.players[gameState.currentPlayer].isHuman
       ? getValidMovesForCurrentPlayer(gameState, rules)
       : [];
+
+  // Coaching advice — only compute when it's the human's turn and coaching is on
+  const coachAdvice: CoachAdvice | null =
+    coachingEnabled &&
+    gameState.phase === 'playing' &&
+    gameState.players[gameState.currentPlayer].isHuman
+      ? getCoachAdvice(gameState, rules)
+      : null;
 
   // Handle AI turns automatically
   const processAITurns = useCallback(
@@ -247,6 +257,9 @@ export function useGame() {
     animDuration,
     setAnimDuration,
     lastMove,
+    coachingEnabled,
+    setCoachingEnabled,
+    coachAdvice,
     selectTile,
     playOnEnd,
     newRound,

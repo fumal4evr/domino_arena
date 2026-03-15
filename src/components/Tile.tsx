@@ -10,6 +10,7 @@ interface TileProps {
   playable?: boolean;
   validTarget?: boolean;
   played?: boolean;
+  suggested?: boolean;
   horizontal?: boolean;
   reversed?: boolean;
   size?: 'sm' | 'md' | 'lg';
@@ -113,6 +114,7 @@ export default function Tile({
   playable = false,
   validTarget = false,
   played = false,
+  suggested = false,
   horizontal = false,
   reversed = false,
   size = 'md',
@@ -129,6 +131,7 @@ export default function Tile({
     playable ? 'playable' : '',
     validTarget ? 'valid-target' : '',
     played ? 'played' : '',
+    suggested ? 'suggested' : '',
   ]
     .filter(Boolean)
     .join(' ');

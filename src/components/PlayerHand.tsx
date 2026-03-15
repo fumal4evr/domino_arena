@@ -18,6 +18,7 @@ interface PlayerHandProps {
   validMoves: GameMove[];
   onTileClick: (tile: TileType) => void;
   revealTiles?: boolean;
+  suggestedTileId?: string | null;
 }
 
 export default function PlayerHand({
@@ -29,6 +30,7 @@ export default function PlayerHand({
   validMoves,
   onTileClick,
   revealTiles = false,
+  suggestedTileId = null,
 }: PlayerHandProps) {
   const faceDown = !isHuman && !revealTiles;
   const isVertical = position === 'east' || position === 'west';
@@ -69,6 +71,7 @@ export default function PlayerHand({
             size={isHuman ? 'lg' : 'sm'}
             selected={selectedTile?.id === tile.id}
             playable={isHuman && playableTileIds.has(tile.id)}
+            suggested={tile.id === suggestedTileId}
             horizontal={isVertical}
             onClick={() => {
               if (isHuman && isCurrentPlayer && playableTileIds.has(tile.id)) {

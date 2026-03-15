@@ -10,6 +10,7 @@ import Scoreboard from './Scoreboard';
 import GameLog from './GameLog';
 import SpeedSlider from './SpeedSlider';
 import FlyingTile from './FlyingTile';
+import CoachPanel from './CoachPanel';
 
 export default function Game() {
   const {
@@ -23,6 +24,9 @@ export default function Game() {
     animDuration,
     setAnimDuration,
     lastMove,
+    coachingEnabled,
+    setCoachingEnabled,
+    coachAdvice,
     selectTile,
     playOnEnd,
     newRound,
@@ -139,7 +143,7 @@ export default function Game() {
 
       {/* Bottom: South player (you) + sidebar info */}
       <div className="flex items-end gap-4 pb-3 px-4">
-        {/* Scoreboard + Speed */}
+        {/* Scoreboard + Speed + Coach toggle */}
         <div className="flex-shrink-0 flex flex-col gap-2">
           <Scoreboard teams={teams} round={round} />
           <SpeedSlider
@@ -148,7 +152,24 @@ export default function Game() {
             animDuration={animDuration}
             onAnimDurationChange={setAnimDuration}
           />
+          <button
+            onClick={() => setCoachingEnabled(!coachingEnabled)}
+            className={`text-xs px-3 py-1.5 rounded-md border transition-colors ${
+              coachingEnabled
+                ? 'bg-cyan-900/60 border-cyan-500 text-cyan-300'
+                : 'bg-gray-800/60 border-gray-600 text-gray-400 hover:border-gray-500'
+            }`}
+          >
+            🧠 Coach {coachingEnabled ? 'ON' : 'OFF'}
+          </button>
         </div>
+
+        {/* Coach Panel */}
+        {coachingEnabled && coachAdvice && currentPlayer === 'south' && phase === 'playing' && (
+          <div className="flex-shrink-0">
+            <CoachPanel advice={coachAdvice} />
+          </div>
+        )}
 
         {/* Your hand */}
         <div ref={southRef} className="flex-1 flex justify-center">
@@ -160,6 +181,11 @@ export default function Game() {
             selectedTile={selectedTile}
             validMoves={validMoves}
             onTileClick={selectTile}
+            suggestedTileId={
+              coachingEnabled && coachAdvice?.suggestion && currentPlayer === 'south'
+                ? coachAdvice.suggestion.move.tile.id
+                : null
+            }
           />
         </div>
 
