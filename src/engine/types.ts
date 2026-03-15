@@ -33,6 +33,8 @@ export interface PlayedTile {
   openValue: PipValue;
   /** Which end of the board this tile was placed on */
   placedAt: BoardEnd;
+  /** If true, display the tile reversed (right|left instead of left|right) */
+  reversed: boolean;
 }
 
 export interface BoardState {

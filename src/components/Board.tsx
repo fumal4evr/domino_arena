@@ -62,6 +62,7 @@ export default function Board({
               <Tile
                 tile={played.tile}
                 horizontal={!isDouble(played.tile)}
+                reversed={played.reversed}
                 played
                 size="md"
               />

@@ -11,6 +11,7 @@ interface TileProps {
   validTarget?: boolean;
   played?: boolean;
   horizontal?: boolean;
+  reversed?: boolean;
   size?: 'sm' | 'md' | 'lg';
   onClick?: () => void;
 }
@@ -104,6 +105,7 @@ export default function Tile({
   validTarget = false,
   played = false,
   horizontal = false,
+  reversed = false,
   size = 'md',
   onClick,
 }: TileProps) {
@@ -140,8 +142,9 @@ export default function Tile({
     );
   }
 
-  const topValue = horizontal ? tile.left : tile.left;
-  const bottomValue = horizontal ? tile.right : tile.right;
+  // When reversed, swap the two halves so the connecting side faces the chain
+  const firstValue = reversed ? tile.right : tile.left;
+  const secondValue = reversed ? tile.left : tile.right;
 
   if (horizontal) {
     const halfW = w / 2;
@@ -152,7 +155,7 @@ export default function Tile({
         onClick={onClick}
       >
         <PipDots
-          value={topValue}
+          value={firstValue}
           halfWidth={halfW - 2}
           halfHeight={h - 4}
           pipSize={s.pip}
@@ -171,7 +174,7 @@ export default function Tile({
           }}
         />
         <PipDots
-          value={bottomValue}
+          value={secondValue}
           halfWidth={halfW - 2}
           halfHeight={h - 4}
           pipSize={s.pip}
@@ -190,7 +193,7 @@ export default function Tile({
       onClick={onClick}
     >
       <PipDots
-        value={topValue}
+        value={firstValue}
         halfWidth={w - 4}
         halfHeight={halfH - 2}
         pipSize={s.pip}
@@ -209,7 +212,7 @@ export default function Tile({
         }}
       />
       <PipDots
-        value={bottomValue}
+        value={secondValue}
         halfWidth={w - 4}
         halfHeight={halfH - 2}
         pipSize={s.pip}

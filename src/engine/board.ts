@@ -73,11 +73,12 @@ export function placeTile(board: BoardState, move: GameMove): BoardState {
   const newChain = [...board.chain];
 
   if (newChain.length === 0) {
-    // First tile
+    // First tile — display as-is: left on visual left, right on visual right
     newChain.push({
       tile,
-      openValue: tile.left, // left side faces left
+      openValue: tile.left,
       placedAt: 'right',
+      reversed: false,
     });
     return {
       chain: newChain,
@@ -88,10 +89,12 @@ export function placeTile(board: BoardState, move: GameMove): BoardState {
 
   if (end === 'left') {
     const connectValue = board.leftOpen!;
-    // Determine which side of the tile connects
     const openValue: PipValue =
       tile.right === connectValue ? tile.left : tile.right;
-    newChain.unshift({ tile, openValue, placedAt: 'left' });
+    // On the left end, the connecting value must be on the visual RIGHT side.
+    // Normal order: left|right. Connect is on the right if tile.right === connectValue.
+    const reversed = tile.left === connectValue;
+    newChain.unshift({ tile, openValue, placedAt: 'left', reversed });
     return {
       chain: newChain,
       leftOpen: openValue,
@@ -101,7 +104,10 @@ export function placeTile(board: BoardState, move: GameMove): BoardState {
     const connectValue = board.rightOpen!;
     const openValue: PipValue =
       tile.left === connectValue ? tile.right : tile.left;
-    newChain.push({ tile, openValue, placedAt: 'right' });
+    // On the right end, the connecting value must be on the visual LEFT side.
+    // Normal order: left|right. Connect is on the left if tile.left === connectValue.
+    const reversed = tile.right === connectValue;
+    newChain.push({ tile, openValue, placedAt: 'right', reversed });
     return {
       chain: newChain,
       leftOpen: board.leftOpen,
