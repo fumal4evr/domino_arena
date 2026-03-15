@@ -17,6 +17,7 @@ interface PlayerHandProps {
   selectedTile: TileType | null;
   validMoves: GameMove[];
   onTileClick: (tile: TileType) => void;
+  revealTiles?: boolean;
 }
 
 export default function PlayerHand({
@@ -27,8 +28,9 @@ export default function PlayerHand({
   selectedTile,
   validMoves,
   onTileClick,
+  revealTiles = false,
 }: PlayerHandProps) {
-  const faceDown = !isHuman;
+  const faceDown = !isHuman && !revealTiles;
   const isVertical = position === 'east' || position === 'west';
 
   const playerLabels: Record<PlayerPosition, string> = {
