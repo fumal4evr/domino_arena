@@ -22,9 +22,12 @@ const SIZE_MAP = {
   lg: { w: 48, h: 96, pip: 6, gap: 2 },
 };
 
-/** Pip positions within a half-tile (relative %, centered in the half) */
+/** Pip positions within a half-tile (relative %, centered in the half).
+ *  Defined for a vertical (portrait) half-tile. For horizontal half-tiles
+ *  the caller should swap x↔y so the pattern rotates with the tile. */
 function getPipPositions(
-  value: PipValue
+  value: PipValue,
+  rotated = false,
 ): { x: number; y: number }[] {
   const positions: Record<number, { x: number; y: number }[]> = {
     0: [],
@@ -60,7 +63,11 @@ function getPipPositions(
       { x: 75, y: 80 },
     ],
   };
-  return positions[value] || [];
+  const pts = positions[value] || [];
+  if (rotated) {
+    return pts.map((p) => ({ x: p.y, y: p.x }));
+  }
+  return pts;
 }
 
 function PipDots({
@@ -70,6 +77,7 @@ function PipDots({
   pipSize,
   offsetX,
   offsetY,
+  rotated = false,
 }: {
   value: PipValue;
   halfWidth: number;
@@ -77,8 +85,9 @@ function PipDots({
   pipSize: number;
   offsetX: number;
   offsetY: number;
+  rotated?: boolean;
 }) {
-  const pips = getPipPositions(value);
+  const pips = getPipPositions(value, rotated);
   return (
     <>
       {pips.map((p, i) => (
@@ -161,6 +170,7 @@ export default function Tile({
           pipSize={s.pip}
           offsetX={2}
           offsetY={2}
+          rotated
         />
         {/* Divider line */}
         <div
@@ -180,6 +190,7 @@ export default function Tile({
           pipSize={s.pip}
           offsetX={halfW}
           offsetY={2}
+          rotated
         />
       </div>
     );
