@@ -103,6 +103,8 @@ export interface GameState {
   turnHistory: TurnAction[];
   roundResults: RoundResult[];
   winner: string | null; // team name if game is over
+  /** Strong suits per player, computed at round start from initial hands */
+  strongSuits: Record<PlayerPosition, PipValue[]>;
 }
 
 // ─── Turn Order (clockwise) ───

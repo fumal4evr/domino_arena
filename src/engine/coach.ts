@@ -10,6 +10,7 @@ import {
 import { pipCount, isDouble } from './tile';
 import { getAllValidMoves } from './board';
 import { RuleEngine } from './rules';
+import { computeLeadOrder, isLead } from './strategy';
 
 // ─── Types ───
 
@@ -176,6 +177,46 @@ function scoreMove(
     reasons.push("covers partner's play");
   }
 
+  // 7. Strong suit strategy (lead/runt system)
+  const myPos = move.playerPosition;
+  const partnerPos = getPartner(myPos);
+  const myStrong = state.strongSuits[myPos];
+  const partnerStrong = state.strongSuits[partnerPos];
+  const iAmLead = isLead(myPos, state);
+  const partnerIsLead = isLead(partnerPos, state);
+
+  // What open value does this move replace (cover)?
+  const coveredValue = getCoveredValue(move, state);
+
+  if (openValueAfter !== null) {
+    // Bonus for opening your own strong suit
+    if (myStrong.includes(openValueAfter)) {
+      const bonus = iAmLead ? 8 : 5;
+      score += bonus;
+      reasons.push(`develops strong suit ${openValueAfter}`);
+    }
+
+    // Bonus for opening partner's strong suit (bigger if partner is lead)
+    if (partnerStrong.includes(openValueAfter)) {
+      const bonus = partnerIsLead ? 7 : 4;
+      score += bonus;
+      reasons.push(`helps partner's suit ${openValueAfter}`);
+    }
+  }
+
+  // Penalty for covering your own strong suit
+  if (coveredValue !== null && myStrong.includes(coveredValue)) {
+    // Only penalize if we had a choice (more than one legal move)
+    score -= iAmLead ? 10 : 6;
+    reasons.push(`covers own strong suit ${coveredValue}`);
+  }
+
+  // Penalty for covering partner's strong suit when partner is lead
+  if (coveredValue !== null && partnerStrong.includes(coveredValue) && partnerIsLead) {
+    score -= 6;
+    reasons.push(`covers partner's strong suit ${coveredValue}`);
+  }
+
   const explanation = reasons.length > 0
     ? reasons.join('; ')
     : `plays [${tile.left}|${tile.right}] on ${move.end}`;
@@ -200,6 +241,14 @@ function getOpenValueAfterMove(move: GameMove, state: GameState): PipValue | nul
     const connectValue = board.rightOpen!;
     return tile.left === connectValue ? tile.right : tile.left;
   }
+}
+
+/** Determine the open value that a move would replace (cover) on the board. */
+function getCoveredValue(move: GameMove, state: GameState): PipValue | null {
+  const board = state.board;
+  if (board.chain.length === 0) return null;
+
+  return move.end === 'left' ? board.leftOpen! : board.rightOpen!;
 }
 
 // ─── Main Entry ───

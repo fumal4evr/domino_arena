@@ -18,6 +18,7 @@ import { createBoard, placeTile, hasValidMove, getAllValidMoves } from './board'
 import { dealTiles, findDoubleSixHolder, handPipCount } from './tile';
 import { RuleEngine } from './rules';
 import { BASE_RULES } from './rules/base-rules';
+import { computeAllStrongSuits } from './strategy';
 import { PARTNER_RULES } from './rules/partner-rules';
 import { AIStrategy, coachAI } from './ai';
 
@@ -71,6 +72,7 @@ export function initGame(): GameState {
     turnHistory: [],
     roundResults: [],
     winner: null,
+    strongSuits: computeAllStrongSuits(players),
   };
 }
 
@@ -91,6 +93,7 @@ export function startNewRound(prevState: GameState): GameState {
     turnHistory: [],
     roundResults: prevState.roundResults,
     winner: null,
+    strongSuits: computeAllStrongSuits(players),
   };
 }
 
