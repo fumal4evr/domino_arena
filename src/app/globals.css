@@ -73,8 +73,7 @@ body {
   align-items: center;
   gap: 2px;
   padding: 20px;
-  min-width: min-content;
-  overflow: visible;
+  white-space: nowrap;
 }
 
 /* Player area highlights */

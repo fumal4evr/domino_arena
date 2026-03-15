@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
+import React, { useRef, useEffect, useImperativeHandle, forwardRef, useState, useCallback } from 'react';
 import { BoardState, BoardEnd } from '@/engine/types';
 import Tile from './Tile';
 import { isDouble } from '@/engine/tile';
@@ -28,21 +28,38 @@ const Board = forwardRef<BoardHandle, BoardProps>(function Board({
   lastMove,
   hiddenTileId,
 }, ref) {
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const chainRef = useRef<HTMLDivElement>(null);
   const leftEndRef = useRef<HTMLDivElement>(null);
   const rightEndRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
 
   useImperativeHandle(ref, () => ({
     getLeftEndRef: () => leftEndRef.current,
     getRightEndRef: () => rightEndRef.current,
   }));
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      const el = scrollRef.current;
-      el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
+  const recalcScale = useCallback(() => {
+    if (!containerRef.current || !chainRef.current) return;
+    const containerW = containerRef.current.clientWidth;
+    const chainW = chainRef.current.scrollWidth;
+    if (chainW > containerW) {
+      setScale(Math.max(0.35, containerW / chainW));
+    } else {
+      setScale(1);
     }
-  }, [board.chain.length]);
+  }, []);
+
+  // Recalc when chain length changes
+  useEffect(() => {
+    recalcScale();
+  }, [board.chain.length, recalcScale]);
+
+  // Recalc on window resize
+  useEffect(() => {
+    window.addEventListener('resize', recalcScale);
+    return () => window.removeEventListener('resize', recalcScale);
+  }, [recalcScale]);
 
   if (board.chain.length === 0) {
     return (
@@ -57,7 +74,7 @@ const Board = forwardRef<BoardHandle, BoardProps>(function Board({
   const lastIdx = board.chain.length - 1;
 
   return (
-    <div className="flex items-center justify-center h-full relative">
+    <div ref={containerRef} className="flex items-center justify-center h-full relative overflow-hidden">
       {showEndButtons && validEnds.includes('left') && (
         <button
           onClick={() => onEndClick('left')}
@@ -68,37 +85,38 @@ const Board = forwardRef<BoardHandle, BoardProps>(function Board({
       )}
 
       <div
-        ref={scrollRef}
-        className="overflow-x-auto max-w-full"
-        style={{ scrollBehavior: 'smooth' }}
+        ref={chainRef}
+        className="board-chain"
+        style={{
+          transform: `scale(${scale})`,
+          transformOrigin: 'center center',
+          transition: 'transform 0.3s ease',
+        }}
       >
-        <div className="board-chain">
-          {board.chain.map((played, idx) => {
-            const isHidden = played.tile.id === hiddenTileId;
-            const isLastPlayed = lastMove && played.tile.id === lastMove.tileId;
-            const key = isLastPlayed
-              ? `${played.tile.id}-${lastMove.timestamp}`
-              : played.tile.id;
-            // Attach refs to the first and last tile wrappers
-            const tileRef = idx === 0 ? leftEndRef : idx === lastIdx ? rightEndRef : undefined;
-            return (
-              <div
-                key={key}
-                ref={tileRef}
-                className={`flex-shrink-0 ${isHidden ? '' : isLastPlayed ? 'tile-pop' : ''}`}
-                style={isHidden ? { opacity: 0 } : undefined}
-              >
-                <Tile
-                  tile={played.tile}
-                  horizontal={!isDouble(played.tile)}
-                  reversed={played.reversed}
-                  played
-                  size="md"
-                />
-              </div>
-            );
-          })}
-        </div>
+        {board.chain.map((played, idx) => {
+          const isHidden = played.tile.id === hiddenTileId;
+          const isLastPlayed = lastMove && played.tile.id === lastMove.tileId;
+          const key = isLastPlayed
+            ? `${played.tile.id}-${lastMove.timestamp}`
+            : played.tile.id;
+          const tileRef = idx === 0 ? leftEndRef : idx === lastIdx ? rightEndRef : undefined;
+          return (
+            <div
+              key={key}
+              ref={tileRef}
+              className={`flex-shrink-0 ${isHidden ? '' : isLastPlayed ? 'tile-pop' : ''}`}
+              style={isHidden ? { opacity: 0 } : undefined}
+            >
+              <Tile
+                tile={played.tile}
+                horizontal={!isDouble(played.tile)}
+                reversed={played.reversed}
+                played
+                size="md"
+              />
+            </div>
+          );
+        })}
       </div>
 
       {showEndButtons && validEnds.includes('right') && (
