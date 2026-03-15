@@ -87,6 +87,12 @@ body {
   white-space: nowrap;
 }
 
+@media (max-height: 500px) {
+  .board-chain {
+    padding: 8px;
+  }
+}
+
 /* Player area highlights */
 .player-area.active {
   background: rgba(255, 215, 0, 0.1);

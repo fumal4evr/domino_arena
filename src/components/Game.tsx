@@ -2,6 +2,7 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { PlayerPosition, TURN_ORDER } from '@/engine/types';
 import { useGame, LastMoveInfo } from '@/hooks/useGame';
+import { useCompact } from '@/hooks/useCompact';
 import { handPipCount } from '@/engine/tile';
 import Board, { BoardHandle } from './Board';
 import PlayerHand from './PlayerHand';
@@ -32,6 +33,8 @@ export default function Game() {
     newGame,
   } = useGame();
 
+  const isCompact = useCompact();
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const { players, teams, board, currentPlayer, phase, round, turnHistory, roundResults, winner } =
     gameState;
 
@@ -73,7 +76,7 @@ export default function Game() {
   return (
     <div className="h-screen w-screen flex flex-col" style={{ background: 'var(--table-green)' }}>
       {/* Top: North player */}
-      <div className="flex justify-center items-start gap-4 pt-2 px-4">
+      <div className={`flex justify-center items-start gap-4 ${isCompact ? 'pt-1 px-2' : 'pt-2 px-4'}`}>
         <div ref={northRef} className="flex-1 flex justify-center">
           <PlayerHand
             tiles={players.north.hand}
@@ -89,7 +92,7 @@ export default function Game() {
       </div>
 
       {/* Middle: West + Board + East */}
-      <div className="flex-1 flex items-center px-2 min-h-0">
+      <div className={`flex-1 flex items-center ${isCompact ? 'px-1' : 'px-2'} min-h-0`}>
         {/* West player */}
         <div ref={westRef} className="flex-shrink-0">
           <PlayerHand
@@ -111,7 +114,7 @@ export default function Game() {
           style={{
             background: 'var(--table-dark)',
             border: '2px solid rgba(255,255,255,0.1)',
-            minHeight: '120px',
+            minHeight: isCompact ? '80px' : '120px',
           }}
         >
           <Board
@@ -141,58 +144,134 @@ export default function Game() {
       </div>
 
       {/* Bottom: South player (you) + sidebar info */}
-      <div className="flex items-end gap-4 pb-3 px-4">
-        {/* Scoreboard + Speed + Coach toggle */}
-        <div className="flex-shrink-0 flex flex-col gap-2">
-          <Scoreboard teams={teams} round={round} />
-          <SpeedSlider
-            aiDelay={aiDelay}
-            onAiDelayChange={setAiDelay}
-            animDuration={animDuration}
-            onAnimDurationChange={setAnimDuration}
-          />
+      {isCompact ? (
+        <div className="flex items-end gap-2 pb-1 px-2">
+          {/* Compact inline scoreboard */}
+          <div className="flex-shrink-0 bg-black/30 rounded-md px-2 py-1 text-xs flex items-center gap-3">
+            <span className="text-gray-400">R{round}</span>
+            {teams.map((t) => (
+              <span key={t.name} className="text-yellow-300 font-bold">
+                {t.name.split(' ').map(w => w[0]).join('')}: {t.score}
+              </span>
+            ))}
+          </div>
+
+          {/* Your hand */}
+          <div ref={southRef} className="flex-1 flex justify-center">
+            <PlayerHand
+              tiles={players.south.hand}
+              position="south"
+              isCurrentPlayer={currentPlayer === 'south'}
+              isHuman={true}
+              selectedTile={selectedTile}
+              validMoves={validMoves}
+              onTileClick={selectTile}
+              tileSize="md"
+              suggestedTileId={
+                coachingEnabled && coachAdvice?.suggestion && currentPlayer === 'south'
+                  ? coachAdvice.suggestion.move.tile.id
+                  : null
+              }
+            />
+          </div>
+
+          {/* Settings toggle */}
           <button
-            onClick={() => setCoachingEnabled(!coachingEnabled)}
-            className={`text-xs px-3 py-1.5 rounded-md border transition-colors ${
-              coachingEnabled
-                ? 'bg-cyan-900/60 border-cyan-500 text-cyan-300'
-                : 'bg-gray-800/60 border-gray-600 text-gray-400 hover:border-gray-500'
-            }`}
+            onClick={() => setDrawerOpen(!drawerOpen)}
+            className="flex-shrink-0 bg-black/40 text-gray-300 rounded-md px-2 py-1.5 text-sm hover:bg-black/60 transition-colors"
           >
-            🧠 Coach {coachingEnabled ? 'ON' : 'OFF'}
+            ⚙️
           </button>
         </div>
-
-        {/* Coach Panel */}
-        {coachingEnabled && coachAdvice && currentPlayer === 'south' && phase === 'playing' && (
-          <div className="flex-shrink-0">
-            <CoachPanel advice={coachAdvice} />
+      ) : (
+        <div className="flex items-end gap-4 pb-3 px-4">
+          {/* Scoreboard + Speed + Coach toggle */}
+          <div className="flex-shrink-0 flex flex-col gap-2">
+            <Scoreboard teams={teams} round={round} />
+            <SpeedSlider
+              aiDelay={aiDelay}
+              onAiDelayChange={setAiDelay}
+              animDuration={animDuration}
+              onAnimDurationChange={setAnimDuration}
+            />
+            <button
+              onClick={() => setCoachingEnabled(!coachingEnabled)}
+              className={`text-xs px-3 py-1.5 rounded-md border transition-colors ${
+                coachingEnabled
+                  ? 'bg-cyan-900/60 border-cyan-500 text-cyan-300'
+                  : 'bg-gray-800/60 border-gray-600 text-gray-400 hover:border-gray-500'
+              }`}
+            >
+              🧠 Coach {coachingEnabled ? 'ON' : 'OFF'}
+            </button>
           </div>
-        )}
 
-        {/* Your hand */}
-        <div ref={southRef} className="flex-1 flex justify-center">
-          <PlayerHand
-            tiles={players.south.hand}
-            position="south"
-            isCurrentPlayer={currentPlayer === 'south'}
-            isHuman={true}
-            selectedTile={selectedTile}
-            validMoves={validMoves}
-            onTileClick={selectTile}
-            suggestedTileId={
-              coachingEnabled && coachAdvice?.suggestion && currentPlayer === 'south'
-                ? coachAdvice.suggestion.move.tile.id
-                : null
-            }
-          />
-        </div>
+          {/* Coach Panel */}
+          {coachingEnabled && coachAdvice && currentPlayer === 'south' && phase === 'playing' && (
+            <div className="flex-shrink-0">
+              <CoachPanel advice={coachAdvice} />
+            </div>
+          )}
 
-        {/* Game Log */}
-        <div className="flex-shrink-0">
-          <GameLog history={turnHistory} />
+          {/* Your hand */}
+          <div ref={southRef} className="flex-1 flex justify-center">
+            <PlayerHand
+              tiles={players.south.hand}
+              position="south"
+              isCurrentPlayer={currentPlayer === 'south'}
+              isHuman={true}
+              selectedTile={selectedTile}
+              validMoves={validMoves}
+              onTileClick={selectTile}
+              suggestedTileId={
+                coachingEnabled && coachAdvice?.suggestion && currentPlayer === 'south'
+                  ? coachAdvice.suggestion.move.tile.id
+                  : null
+              }
+            />
+          </div>
+
+          {/* Game Log */}
+          <div className="flex-shrink-0">
+            <GameLog history={turnHistory} />
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Compact settings drawer (overlay) */}
+      {isCompact && drawerOpen && (
+        <div className="fixed inset-0 z-40" onClick={() => setDrawerOpen(false)}>
+          <div className="absolute inset-0 bg-black/40" />
+          <div
+            className="absolute bottom-0 left-0 right-0 bg-gray-900/95 border-t border-white/10 p-3 flex gap-3 overflow-x-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Scoreboard teams={teams} round={round} />
+            <SpeedSlider
+              aiDelay={aiDelay}
+              onAiDelayChange={setAiDelay}
+              animDuration={animDuration}
+              onAnimDurationChange={setAnimDuration}
+            />
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => setCoachingEnabled(!coachingEnabled)}
+                className={`text-xs px-3 py-1.5 rounded-md border transition-colors ${
+                  coachingEnabled
+                    ? 'bg-cyan-900/60 border-cyan-500 text-cyan-300'
+                    : 'bg-gray-800/60 border-gray-600 text-gray-400 hover:border-gray-500'
+                }`}
+              >
+                🧠 Coach {coachingEnabled ? 'ON' : 'OFF'}
+              </button>
+            </div>
+            <GameLog history={turnHistory} />
+            {coachingEnabled && coachAdvice && currentPlayer === 'south' && phase === 'playing' && (
+              <CoachPanel advice={coachAdvice} />
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Flying tile overlay */}
       {flyingMove && (
@@ -223,8 +302,8 @@ export default function Game() {
       {/* Round Over overlay */}
       {phase === 'round_over' && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-gray-900 rounded-xl p-8 text-center max-w-md shadow-2xl">
-            <h2 className="text-2xl font-bold mb-3">Round {round} Over!</h2>
+          <div className={`bg-gray-900 rounded-xl text-center max-w-md shadow-2xl ${isCompact ? 'p-4' : 'p-8'}`}>
+            <h2 className={`font-bold mb-2 ${isCompact ? 'text-lg' : 'text-2xl'}`}>Round {round} Over!</h2>
             {roundResults.length > 0 && (() => {
               const result = roundResults[roundResults.length - 1];
               return (
@@ -281,8 +360,8 @@ export default function Game() {
       {/* Game Over overlay */}
       {phase === 'game_over' && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-gray-900 rounded-xl p-8 text-center max-w-md shadow-2xl">
-            <h2 className="text-3xl font-bold mb-2">🏆 Game Over!</h2>
+          <div className={`bg-gray-900 rounded-xl text-center max-w-md shadow-2xl ${isCompact ? 'p-4' : 'p-8'}`}>
+            <h2 className={`font-bold mb-2 ${isCompact ? 'text-xl' : 'text-3xl'}`}>🏆 Game Over!</h2>
             <p className="text-yellow-300 text-2xl font-bold mb-4">
               {winner} wins!
             </p>
