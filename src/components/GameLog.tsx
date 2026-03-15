@@ -41,8 +41,8 @@ export default function GameLog({ history }: GameLogProps) {
           const name = POSITION_NAMES[action.playerPosition];
           if (isPassMove(action)) {
             return (
-              <div key={idx} className="text-gray-500">
-                {name} passed
+              <div key={idx} className="text-orange-400">
+                {name} passed ✋
               </div>
             );
           }
