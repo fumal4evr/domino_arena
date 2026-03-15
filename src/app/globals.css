@@ -100,3 +100,30 @@ body {
 .tile-enter {
   animation: slide-in 0.3s ease-out;
 }
+
+/* Directional fly-in animations */
+@keyframes fly-from-north {
+  0% { opacity: 0; transform: translateY(-120px) scale(0.5); }
+  60% { opacity: 1; transform: translateY(-10px) scale(1.05); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes fly-from-south {
+  0% { opacity: 0; transform: translateY(120px) scale(0.5); }
+  60% { opacity: 1; transform: translateY(10px) scale(1.05); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes fly-from-east {
+  0% { opacity: 0; transform: translateX(150px) scale(0.5); }
+  60% { opacity: 1; transform: translateX(10px) scale(1.05); }
+  100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes fly-from-west {
+  0% { opacity: 0; transform: translateX(-150px) scale(0.5); }
+  60% { opacity: 1; transform: translateX(-10px) scale(1.05); }
+  100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+.fly-from-north { animation: fly-from-north 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+.fly-from-south { animation: fly-from-south 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+.fly-from-east  { animation: fly-from-east 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+.fly-from-west  { animation: fly-from-west 0.5s cubic-bezier(0.22, 1, 0.36, 1); }

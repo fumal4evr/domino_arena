@@ -1,26 +1,35 @@
 'use client';
 
 import React, { useRef, useEffect } from 'react';
-import { BoardState, BoardEnd, PlayedTile } from '@/engine/types';
+import { BoardState, BoardEnd, PlayerPosition } from '@/engine/types';
 import Tile from './Tile';
 import { isDouble } from '@/engine/tile';
+import { LastMoveInfo } from '@/hooks/useGame';
 
 interface BoardProps {
   board: BoardState;
   showEndButtons: boolean;
   validEnds: BoardEnd[];
   onEndClick: (end: BoardEnd) => void;
+  lastMove: LastMoveInfo | null;
 }
+
+const DIRECTION_CLASS: Record<PlayerPosition, string> = {
+  north: 'fly-from-north',
+  south: 'fly-from-south',
+  east: 'fly-from-east',
+  west: 'fly-from-west',
+};
 
 export default function Board({
   board,
   showEndButtons,
   validEnds,
   onEndClick,
+  lastMove,
 }: BoardProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to center when a new tile is placed
   useEffect(() => {
     if (scrollRef.current) {
       const el = scrollRef.current;
@@ -40,7 +49,6 @@ export default function Board({
 
   return (
     <div className="flex items-center justify-center h-full relative">
-      {/* Left end button */}
       {showEndButtons && validEnds.includes('left') && (
         <button
           onClick={() => onEndClick('left')}
@@ -50,28 +58,35 @@ export default function Board({
         </button>
       )}
 
-      {/* Board tiles */}
       <div
         ref={scrollRef}
         className="overflow-x-auto max-w-full"
         style={{ scrollBehavior: 'smooth' }}
       >
         <div className="board-chain">
-          {board.chain.map((played, idx) => (
-            <div key={idx} className="tile-enter flex-shrink-0">
-              <Tile
-                tile={played.tile}
-                horizontal={!isDouble(played.tile)}
-                reversed={played.reversed}
-                played
-                size="md"
-              />
-            </div>
-          ))}
+          {board.chain.map((played, idx) => {
+            const isLastPlayed = lastMove && played.tile.id === lastMove.tileId;
+            const animClass = isLastPlayed
+              ? DIRECTION_CLASS[lastMove.playerPosition]
+              : '';
+            return (
+              <div
+                key={`${played.tile.id}-${lastMove?.timestamp ?? 0}`}
+                className={`flex-shrink-0 ${animClass}`}
+              >
+                <Tile
+                  tile={played.tile}
+                  horizontal={!isDouble(played.tile)}
+                  reversed={played.reversed}
+                  played
+                  size="md"
+                />
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* Right end button */}
       {showEndButtons && validEnds.includes('right') && (
         <button
           onClick={() => onEndClick('right')}

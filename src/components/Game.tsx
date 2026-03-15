@@ -6,6 +6,7 @@ import Board from './Board';
 import PlayerHand from './PlayerHand';
 import Scoreboard from './Scoreboard';
 import GameLog from './GameLog';
+import SpeedSlider from './SpeedSlider';
 
 export default function Game() {
   const {
@@ -14,6 +15,9 @@ export default function Game() {
     validEnds,
     validMoves,
     isAIThinking,
+    aiDelay,
+    setAiDelay,
+    lastMove,
     selectTile,
     playOnEnd,
     newRound,
@@ -69,6 +73,7 @@ export default function Game() {
             showEndButtons={!!selectedTile && validEnds.length > 1}
             validEnds={validEnds}
             onEndClick={playOnEnd}
+            lastMove={lastMove}
           />
         </div>
 
@@ -88,9 +93,10 @@ export default function Game() {
 
       {/* Bottom: South player (you) + sidebar info */}
       <div className="flex items-end gap-4 pb-3 px-4">
-        {/* Scoreboard */}
-        <div className="flex-shrink-0">
+        {/* Scoreboard + Speed */}
+        <div className="flex-shrink-0 flex flex-col gap-2">
           <Scoreboard teams={teams} round={round} />
+          <SpeedSlider value={aiDelay} onChange={setAiDelay} />
         </div>
 
         {/* Your hand */}
