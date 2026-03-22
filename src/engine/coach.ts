@@ -6,6 +6,7 @@ import {
   PlayerPosition,
   isPassMove,
   getPartner,
+  TURN_ORDER,
 } from './types';
 import { pipCount, isDouble } from './tile';
 import { getAllValidMoves } from './board';
@@ -215,6 +216,37 @@ function scoreMove(
   if (coveredValue !== null && partnerStrong.includes(coveredValue) && partnerIsLead) {
     score -= 6;
     reasons.push(`covers partner's strong suit ${coveredValue}`);
+  }
+
+  // 8. Avoid feeding opponents: penalize opening values that match unplayed
+  //    tiles from an opponent's strong suit (e.g. opening 0 when opponent's
+  //    strong suit is 4 and [4|0] hasn't been played yet).
+  if (openValueAfter !== null) {
+    const playedIds = new Set(state.board.chain.map((p) => p.tile.id));
+    // Also count the tile being played right now
+    playedIds.add(tile.id);
+
+    const opponents = TURN_ORDER.filter(
+      (p) => p !== myPos && p !== partnerPos
+    );
+    for (const opp of opponents) {
+      const oppStrong = state.strongSuits[opp];
+      for (const suitVal of oppStrong) {
+        // Does the open value let the opponent connect a tile from their
+        // strong suit that hasn't been played yet?
+        // Such a tile has one side = suitVal and the other = openValueAfter.
+        const feedId =
+          suitVal <= openValueAfter
+            ? `${suitVal}|${openValueAfter}`
+            : `${openValueAfter}|${suitVal}`;
+        if (!playedIds.has(feedId)) {
+          score -= 7;
+          reasons.push(
+            `feeds opponent's [${feedId}] (strong ${suitVal})`
+          );
+        }
+      }
+    }
   }
 
   const explanation = reasons.length > 0
