@@ -1,7 +1,7 @@
 
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { PlayerPosition, TURN_ORDER } from '@/engine/types';
-import { useGame, LastMoveInfo } from '@/hooks/useGame';
+import { useGame, LastMoveInfo, LastPassInfo } from '@/hooks/useGame';
 import { useCompact } from '@/hooks/useCompact';
 import { handPipCount } from '@/engine/tile';
 import Board, { BoardHandle } from './Board';
@@ -11,6 +11,13 @@ import GameLog from './GameLog';
 import SpeedSlider from './SpeedSlider';
 import FlyingTile from './FlyingTile';
 import CoachPanel from './CoachPanel';
+
+const POSITION_NAMES: Record<PlayerPosition, string> = {
+  south: 'You',
+  north: 'Partner',
+  east: 'East',
+  west: 'West',
+};
 
 export default function Game() {
   const {
@@ -24,6 +31,7 @@ export default function Game() {
     animDuration,
     setAnimDuration,
     lastMove,
+    lastPass,
     coachingEnabled,
     setCoachingEnabled,
     coachAdvice,
@@ -60,6 +68,11 @@ export default function Game() {
   const [hiddenTileId, setHiddenTileId] = useState<string | null>(null);
   const lastMoveTimestamp = useRef<number>(0);
 
+  // Pass banner state — deferred until flying tile finishes
+  const [passBanner, setPassBanner] = useState<LastPassInfo | null>(null);
+  const lastPassTimestamp = useRef<number>(0);
+  const pendingPassRef = useRef<LastPassInfo | null>(null);
+
   // Synchronously start flying animation when lastMove changes (during render,
   // before paint) so the tile on the board is hidden from the very first frame.
   if (lastMove && lastMove.timestamp !== lastMoveTimestamp.current) {
@@ -68,9 +81,42 @@ export default function Game() {
     setHiddenTileId(lastMove.tileId);
   }
 
+  // Queue pass banner — show immediately only if no flying tile is active,
+  // otherwise defer until onFlyComplete.
+  if (lastPass && lastPass.timestamp !== lastPassTimestamp.current) {
+    lastPassTimestamp.current = lastPass.timestamp;
+    if (!flyingMove && lastMoveTimestamp.current === (lastMove?.timestamp ?? 0)) {
+      // No new flying tile this render — show now
+      setPassBanner(lastPass);
+    } else {
+      pendingPassRef.current = lastPass;
+    }
+  }
+
+  // Auto-dismiss pass banner after the animation duration
+  useEffect(() => {
+    if (!passBanner) return;
+    const timer = setTimeout(() => setPassBanner(null), animDuration);
+    return () => clearTimeout(timer);
+  }, [passBanner, animDuration]);
+
+  // Keep showing the player who just acted as "current" until the flying
+  // tile animation or pass banner finishes, so the highlight doesn't jump
+  // ahead of the visual.
+  const displayedCurrentPlayer = flyingMove
+    ? flyingMove.playerPosition
+    : passBanner
+      ? passBanner.playerPositions[passBanner.playerPositions.length - 1]
+      : currentPlayer;
+
   const onFlyComplete = useCallback(() => {
     setFlyingMove(null);
     setHiddenTileId(null);
+    // Show deferred pass banner now that the flying tile is done
+    if (pendingPassRef.current) {
+      setPassBanner(pendingPassRef.current);
+      pendingPassRef.current = null;
+    }
   }, []);
 
   return (
@@ -81,7 +127,7 @@ export default function Game() {
           <PlayerHand
             tiles={players.north.hand}
             position="north"
-            isCurrentPlayer={currentPlayer === 'north'}
+            isCurrentPlayer={displayedCurrentPlayer === 'north'}
             isHuman={false}
             selectedTile={null}
             validMoves={[]}
@@ -98,7 +144,7 @@ export default function Game() {
           <PlayerHand
             tiles={players.west.hand}
             position="west"
-            isCurrentPlayer={currentPlayer === 'west'}
+            isCurrentPlayer={displayedCurrentPlayer === 'west'}
             isHuman={false}
             selectedTile={null}
             validMoves={[]}
@@ -133,7 +179,7 @@ export default function Game() {
           <PlayerHand
             tiles={players.east.hand}
             position="east"
-            isCurrentPlayer={currentPlayer === 'east'}
+            isCurrentPlayer={displayedCurrentPlayer === 'east'}
             isHuman={false}
             selectedTile={null}
             validMoves={[]}
@@ -178,7 +224,7 @@ export default function Game() {
             <PlayerHand
               tiles={players.south.hand}
               position="south"
-              isCurrentPlayer={currentPlayer === 'south'}
+              isCurrentPlayer={displayedCurrentPlayer === 'south'}
               isHuman={true}
               selectedTile={selectedTile}
               validMoves={validMoves}
@@ -235,7 +281,7 @@ export default function Game() {
             <PlayerHand
               tiles={players.south.hand}
               position="south"
-              isCurrentPlayer={currentPlayer === 'south'}
+              isCurrentPlayer={displayedCurrentPlayer === 'south'}
               isHuman={true}
               selectedTile={selectedTile}
               validMoves={validMoves}
@@ -309,8 +355,35 @@ export default function Game() {
         />
       )}
 
+      {/* Pass banner overlay */}
+      {passBanner && !flyingMove && (
+        <div
+          key={passBanner.timestamp}
+          className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none"
+        >
+          <div
+            className="bg-black/70 border border-orange-500/50 rounded-xl px-6 py-3 text-center animate-pass-banner"
+            style={{ '--pass-duration': `${animDuration}ms` } as React.CSSProperties}
+          >
+            <div className="text-orange-400 text-lg font-bold">
+              {passBanner.playerPositions
+                .map((p) => POSITION_NAMES[p])
+                .join(', ')}{' '}
+              passed ✋
+            </div>
+            {passBanner.boardLeftOpen !== null && passBanner.boardRightOpen !== null && (
+              <div className="text-gray-400 text-sm mt-1">
+                Board ends: <span className="font-mono text-yellow-200">{passBanner.boardLeftOpen}</span>
+                {' · '}
+                <span className="font-mono text-yellow-200">{passBanner.boardRightOpen}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* AI thinking indicator */}
-      {isAIThinking && phase === 'playing' && !flyingMove && (
+      {isAIThinking && phase === 'playing' && !flyingMove && !passBanner && (
         <div className="fixed top-4 right-4 bg-black/60 text-yellow-300 px-3 py-1.5 rounded-lg text-sm animate-pulse">
           🤔 Thinking...
         </div>

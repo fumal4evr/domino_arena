@@ -57,6 +57,10 @@ export interface GameMove {
 export interface PassMove {
   playerPosition: PlayerPosition;
   pass: true;
+  /** Open value on the left end of the chain at the time of the pass */
+  boardLeftOpen: PipValue | null;
+  /** Open value on the right end of the chain at the time of the pass */
+  boardRightOpen: PipValue | null;
 }
 
 export type TurnAction = GameMove | PassMove;

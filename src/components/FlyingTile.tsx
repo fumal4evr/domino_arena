@@ -1,5 +1,5 @@
 
-import React, { useLayoutEffect, useState, useRef } from 'react';
+import React, { useLayoutEffect, useEffect, useState, useRef } from 'react';
 import { Tile as TileType } from '@/engine/types';
 import Tile from './Tile';
 import { isDouble } from '@/engine/tile';
@@ -28,6 +28,23 @@ export default function FlyingTile({
     opacity: 0,
   });
   const hasAnimated = useRef(false);
+  const completeCalled = useRef(false);
+
+  const safeComplete = () => {
+    if (!completeCalled.current) {
+      completeCalled.current = true;
+      onComplete();
+    }
+  };
+
+  // Completion timer in a separate effect so that parent re-renders (which
+  // recreate the inline getToElement prop) cannot cancel it.  The component
+  // is keyed per animation, so this runs exactly once per flight.
+  useEffect(() => {
+    const timer = setTimeout(safeComplete, duration + 50);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // useLayoutEffect so we measure after Board's layout (useLayoutEffect) has
   // settled the chain scale — positions will already be correct.
@@ -36,7 +53,7 @@ export default function FlyingTile({
     const from = fromRef.current;
     const to = getToElement();
     if (!from || !to) {
-      onComplete();
+      safeComplete();
       return;
     }
 
@@ -77,10 +94,7 @@ export default function FlyingTile({
         });
       });
     });
-
-    const timer = setTimeout(onComplete, duration + 50);
-    return () => clearTimeout(timer);
-  }, [fromRef, getToElement, duration, onComplete]);
+  }, [fromRef, getToElement, duration]);
 
   return (
     <div style={style}>

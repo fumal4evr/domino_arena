@@ -37,9 +37,13 @@ export default function GameLog({ history }: GameLogProps) {
         {history.map((action, idx) => {
           const name = POSITION_NAMES[action.playerPosition];
           if (isPassMove(action)) {
+            const ends =
+              action.boardLeftOpen !== null && action.boardRightOpen !== null
+                ? ` on [${action.boardLeftOpen}·${action.boardRightOpen}]`
+                : '';
             return (
               <div key={idx} className="text-orange-400">
-                {name} passed ✋
+                {name} passed{ends} ✋
               </div>
             );
           }

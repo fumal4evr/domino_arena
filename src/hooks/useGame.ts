@@ -3,9 +3,11 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   GameState,
   GameMove,
+  TurnAction,
   Tile,
   BoardEnd,
   PlayerPosition,
+  PipValue,
   isPassMove,
 } from '@/engine/types';
 import {
@@ -31,6 +33,41 @@ export interface LastMoveInfo {
   timestamp: number;
 }
 
+export interface LastPassInfo {
+  playerPositions: PlayerPosition[];
+  boardLeftOpen: PipValue | null;
+  boardRightOpen: PipValue | null;
+  timestamp: number;
+}
+
+/** Collect auto-passes that advanceToNextPlayer appended after a move. */
+function collectAutoPasses(
+  prevHistory: TurnAction[],
+  newHistory: TurnAction[],
+): LastPassInfo | null {
+  // New entries start right after the playing action (prevHistory.length + 1).
+  const passes: PlayerPosition[] = [];
+  let leftOpen: PipValue | null = null;
+  let rightOpen: PipValue | null = null;
+
+  for (let i = prevHistory.length + 1; i < newHistory.length; i++) {
+    const entry = newHistory[i];
+    if (isPassMove(entry)) {
+      passes.push(entry.playerPosition);
+      leftOpen = entry.boardLeftOpen;
+      rightOpen = entry.boardRightOpen;
+    }
+  }
+
+  if (passes.length === 0) return null;
+  return {
+    playerPositions: passes,
+    boardLeftOpen: leftOpen,
+    boardRightOpen: rightOpen,
+    timestamp: Date.now(),
+  };
+}
+
 export function useGame() {
   const [gameState, setGameState] = useState<GameState>(() => initGame());
   const [selectedTile, setSelectedTile] = useState<Tile | null>(null);
@@ -39,6 +76,7 @@ export function useGame() {
   const [aiDelay, setAiDelay] = useState(DEFAULT_DELAY_MS);
   const [animDuration, setAnimDuration] = useState(1500);
   const [lastMove, setLastMove] = useState<LastMoveInfo | null>(null);
+  const [lastPass, setLastPass] = useState<LastPassInfo | null>(null);
   const [coachingEnabled, setCoachingEnabled] = useState(false);
   const rulesRef = useRef<RuleEngine>(createGameRuleEngine());
   const aiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -89,20 +127,30 @@ export function useGame() {
           const whoPlayed = prev.currentPlayer;
           const newState = executeAITurn(prev, rules);
 
-          // Track last move for animation
-          const lastAction = newState.turnHistory[newState.turnHistory.length - 1];
-          if (lastAction && !isPassMove(lastAction)) {
+          // Detect the tile play (always first new entry since
+          // advanceToNextPlayer guarantees currentPlayer can play).
+          const whoPlayedAction = newState.turnHistory[prev.turnHistory.length];
+          if (whoPlayedAction && !isPassMove(whoPlayedAction)) {
             const placed = newState.board.chain.find(
-              (p) => p.tile.id === lastAction.tile.id
+              (p) => p.tile.id === whoPlayedAction.tile.id
             );
             setLastMove({
               playerPosition: whoPlayed,
-              tileId: lastAction.tile.id,
-              tile: lastAction.tile,
+              tileId: whoPlayedAction.tile.id,
+              tile: whoPlayedAction.tile,
               reversed: placed?.reversed ?? false,
-              end: lastAction.end,
+              end: whoPlayedAction.end,
               timestamp: Date.now(),
             });
+          }
+
+          // Detect auto-passes appended by advanceToNextPlayer.
+          const autoPassInfo = collectAutoPasses(
+            prev.turnHistory,
+            newState.turnHistory,
+          );
+          if (autoPassInfo) {
+            setLastPass(autoPassInfo);
           }
 
           if (
@@ -171,6 +219,13 @@ export function useGame() {
               end: ends[0],
               timestamp: Date.now(),
             });
+            const autoPassInfo = collectAutoPasses(
+              prev.turnHistory,
+              newState.turnHistory,
+            );
+            if (autoPassInfo) {
+              setLastPass(autoPassInfo);
+            }
             if (
               newState.phase === 'playing' &&
               !newState.players[newState.currentPlayer].isHuman
@@ -217,6 +272,13 @@ export function useGame() {
           end,
           timestamp: Date.now(),
         });
+        const autoPassInfo = collectAutoPasses(
+          prev.turnHistory,
+          newState.turnHistory,
+        );
+        if (autoPassInfo) {
+          setLastPass(autoPassInfo);
+        }
         if (
           newState.phase === 'playing' &&
           !newState.players[newState.currentPlayer].isHuman
@@ -233,6 +295,7 @@ export function useGame() {
     setSelectedTile(null);
     setValidEnds([]);
     setLastMove(null);
+    setLastPass(null);
     setGameState((prev) => startNewRound(prev));
   }, []);
 
@@ -240,6 +303,7 @@ export function useGame() {
     setSelectedTile(null);
     setValidEnds([]);
     setLastMove(null);
+    setLastPass(null);
     setIsAIThinking(false);
     if (aiTimerRef.current) clearTimeout(aiTimerRef.current);
     setGameState(initGame());
@@ -256,6 +320,7 @@ export function useGame() {
     animDuration,
     setAnimDuration,
     lastMove,
+    lastPass,
     coachingEnabled,
     setCoachingEnabled,
     coachAdvice,

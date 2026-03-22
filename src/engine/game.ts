@@ -138,6 +138,8 @@ export function executePass(state: GameState): GameState {
   const passAction: PassMove = {
     playerPosition: state.currentPlayer,
     pass: true,
+    boardLeftOpen: state.board.leftOpen,
+    boardRightOpen: state.board.rightOpen,
   };
   const newHistory: TurnAction[] = [...state.turnHistory, passAction];
 
@@ -164,6 +166,8 @@ function advanceToNextPlayer(state: GameState): GameState {
     const passAction: PassMove = {
       playerPosition: candidate,
       pass: true,
+      boardLeftOpen: currentState.board.leftOpen,
+      boardRightOpen: currentState.board.rightOpen,
     };
     currentState = {
       ...currentState,
